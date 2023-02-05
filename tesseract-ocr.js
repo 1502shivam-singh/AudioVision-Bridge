@@ -1,5 +1,28 @@
 import { LangMap, VoiceMap } from "./lib/map.js"
 
+function typeWriter(animationContainer, string) {
+  let index = 0;
+  let currentTimeout;
+  animationContainer.textContent = ''
+  
+  function type() {
+	const nextCharacter = string[index];
+	animationContainer.textContent += nextCharacter;
+	index++;
+  
+	if (index === string.length) {
+	  clearTimeout(currentTimeout);
+	  return;
+	}
+  
+	// Randomize the time between character additions to make it look more natural
+	const typingSpeed = Math.floor(Math.random() * 10) + 30;
+	currentTimeout = setTimeout(type, typingSpeed);
+  }
+
+  type()
+}
+
 $( document ).ready(function() {
 	let inputs = document.querySelectorAll( '.inputfile' );
 
@@ -87,12 +110,14 @@ async function getTranslation(text) {
 		const translatedText = response.outputs[0].output
 
 		// translateDiv.innerHTML = ''
-		translateDiv.textContent = translatedText
+		typeWriter(translateDiv, translatedText)
+		// translateDiv.textContent = translatedText
 		// translateDiv.appendChild(document.createTextNode(translatedText))
 		window.scrollTo(0, document.body.scrollHeight);
 	} catch (e) {
 		console.log('error:', e)
-		translateDiv.textContent = text
+		// translateDiv.textContent = text
+		typeWriter(translateDiv, text)
 	}
 }
 
@@ -160,7 +185,8 @@ async function progressUpdate(packet){
 			const pre = document.createElement('pre')
 			
 			/* pre node created here, child appended to it, a textNode in which we put the detected text */
-			pre.appendChild(document.createTextNode(packet.data.text.replace(/\n\s*\n/g, '\n')))
+			// pre.appendChild(document.createTextNode(packet.data.text.replace(/\n\s*\n/g, '\n')))
+			typeWriter(pre, packet.data.text.replace(/\n\s*\n/g, '\n'))
 			
 			line.innerHTML = ''
 			line.appendChild(pre)
