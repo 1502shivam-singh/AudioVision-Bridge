@@ -4,7 +4,7 @@ function typeWriter(animationContainer, string) {
   let index = 0;
   let currentTimeout;
   animationContainer.textContent = ''
-  
+
   function type() {
 	const nextCharacter = string[index];
 	animationContainer.textContent += nextCharacter;
@@ -144,7 +144,7 @@ async function dictate(transcript) {
 
 	const TEX2SPCH_API_KEY = "d1d6aa7348054418a64263411fb3691b"
 	try {
-		const sound = await fetch(`http://api.voicerss.org/?key=${TEX2SPCH_API_KEY}&hl=${src_lang}&src=${transcript}&c=MP3`, requestOptions)
+		const sound = await fetch(`https://api.voicerss.org/?key=${TEX2SPCH_API_KEY}&hl=${src_lang}&src=${transcript}&c=MP3`, requestOptions)
 			.then(sound => {
 				console.log(sound);
 				const audio = document.querySelector("#audio-elem")
