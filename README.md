@@ -1,7 +1,14 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/2dd4d44c-9a7d-4225-8ccc-71b343df74aa/deploy-status)](https://app.netlify.com/sites/text-extraction/deploys)
 
-# Text Extractor
+# AudioVision Bridge
 
-This is a web application extracts text from any image and displays it to you.
+Complete accessibilty aid for the general public
+
+An web application that 
+
+         - Can extract text from images, 
+         - Can translates it into any language
+         - And also converts it into voice (Text2Speech)
+
 
 Very useful for picking up text from images for instant sharing, potential for realtime text detection.
