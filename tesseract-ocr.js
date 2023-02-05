@@ -1,13 +1,23 @@
+import { LangMap, VoiceMap } from "./lib/map.js"
+
 $( document ).ready(function() {
-	var inputs = document.querySelectorAll( '.inputfile' );
+	let inputs = document.querySelectorAll( '.inputfile' );
+
+	document.querySelector(".translated-exec-go").addEventListener('click', (e) => {
+		getTranslation(document.querySelector('#log').textContent)
+	})
+	document.querySelector(".audiobtn").addEventListener('click', ()=>{
+		dictate(document.querySelector('.translated-text').textContent)
+	})
+
 	Array.prototype.forEach.call( inputs, function( input )
 	{
-		var label	 = input.nextElementSibling,
+		let label	 = input.nextElementSibling,
 			labelVal = label.innerHTML;
 
 		input.addEventListener( 'change', function( e )
 		{
-			var fileName = '';
+			let fileName = '';
 			if( this.files && this.files.length > 1 )
 				fileName = ( this.getAttribute( 'data-multiple-caption' ) || '' ).replace( '{count}', this.files.length );
 			else
@@ -47,9 +57,44 @@ $( document ).ready(function() {
 });
 
 $("#startLink").click(function () {
-	var img = document.getElementById('selected-image');
+	const img = document.getElementById('selected-image');
 	startRecognize(img);
 });
+
+async function getTranslation(text) {
+	if(text === "") {
+		alert("Please extract text from some image before translating")
+		return
+	}
+	
+	let myHeaders = new Headers();
+	myHeaders.append("Cookie", "__cf_bm=tJ53XYNY2FXHou0aTTigI38aRr9UE28kgqJOrE1I63Q-1675517864-0-Adxq+uoAN2zZOOOFKyixSaG2rqqc4/HzAgatvPesuczyGW9B1vTt+tuGh9UXEiYgejSIW7qumzSTfenvXKwBrgI=");
+	const API_KEY = "2ec7fbbc-ae16-4c05-8508-6ec1840eb67e"
+	const targetLang = LangMap.get(document.querySelector("#langsel-translate").value)
+
+	const requestOptions = {
+	  method: 'POST',
+	  headers: myHeaders,
+	  redirect: 'follow'
+	};
+
+	const translateDiv = document.querySelector(".translated-text");
+	try {
+		const response = await fetch(`https://api-translate.systran.net/translation/text/translate?input=${text}&source=auto&key=${API_KEY}&target=${targetLang}`, requestOptions)
+		  .then(response => response.text())
+		  .then(result => JSON.parse(result))
+		
+		const translatedText = response.outputs[0].output
+
+		// translateDiv.innerHTML = ''
+		translateDiv.textContent = translatedText
+		// translateDiv.appendChild(document.createTextNode(translatedText))
+		window.scrollTo(0, document.body.scrollHeight);
+	} catch (e) {
+		console.log('error:', e)
+		translateDiv.textContent = text
+	}
+}
 
 function startRecognize(img){
 	$("#arrow-right").removeClass("fa-arrow-right");
@@ -59,33 +104,60 @@ function startRecognize(img){
 	recognizeFile(img);
 }
 
-function progressUpdate(packet){
-	var log = document.getElementById('log');
+async function dictate(transcript) {
+	if(transcript === "") {
+		alert("No text to dictate: Please translate some text first")
+		return
+	}
+
+	const requestOptions = {
+		method: 'GET',
+		redirect: 'follow',
+	  };
+	  
+	const src_lang = document.querySelector("#langsel-translate").value
+
+	const TEX2SPCH_API_KEY = "d1d6aa7348054418a64263411fb3691b"
+	try {
+		const sound = await fetch(`http://api.voicerss.org/?key=${TEX2SPCH_API_KEY}&hl=${src_lang}&src=${transcript}&c=MP3`, requestOptions)
+			.then(sound => {
+				console.log(sound);
+				const audio = document.querySelector("#audio-elem")
+				audio.src = sound.url
+				audio.play();
+			})
+
+	} catch (e) {
+		console.log("Error: ", e);
+	}
+}
+
+async function progressUpdate(packet){
+	const log = document.getElementById('log');
 
 	if(log.firstChild && log.firstChild.status === packet.status){
 		if('progress' in packet) {
-			var progress = log.firstChild.querySelector('progress')
+			const progress = log.firstChild.querySelector('progress')
 			progress.value = packet.progress
 		}
 	} else {
-		var line = document.createElement('div');
+		const line = document.createElement('div');
 		line.status = packet.status;
-		var status = document.createElement('div')
+		const status = document.createElement('div')
 		status.className = 'status'
 		status.appendChild(document.createTextNode(packet.status))
 		line.appendChild(status)
 
 		if('progress' in packet){
-			var progress = document.createElement('progress')
+			const progress = document.createElement('progress')
 			progress.value = packet.progress
 			progress.max = 1
 			line.appendChild(progress)
 		}
 
-
-		if(packet.status == 'done'){
+		if(packet.status == 'done') {
 			log.innerHTML = ''
-			var pre = document.createElement('pre')
+			const pre = document.createElement('pre')
 			
 			/* pre node created here, child appended to it, a textNode in which we put the detected text */
 			pre.appendChild(document.createTextNode(packet.data.text.replace(/\n\s*\n/g, '\n')))
