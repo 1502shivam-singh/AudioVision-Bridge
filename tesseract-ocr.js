@@ -90,10 +90,19 @@ async function getTranslation(text) {
 		return
 	}
 	
+	text = text.replace(/[.?&/\\]/g, '')
+	console.log(text);
+
 	let myHeaders = new Headers();
 	myHeaders.append("Cookie", "__cf_bm=tJ53XYNY2FXHou0aTTigI38aRr9UE28kgqJOrE1I63Q-1675517864-0-Adxq+uoAN2zZOOOFKyixSaG2rqqc4/HzAgatvPesuczyGW9B1vTt+tuGh9UXEiYgejSIW7qumzSTfenvXKwBrgI=");
 	const API_KEY = "2ec7fbbc-ae16-4c05-8508-6ec1840eb67e"
 	const targetLang = LangMap.get(document.querySelector("#langsel-translate").value)
+	
+	const inputLang = document.querySelector("#langsel").value.substring(0, 2);
+	if(inputLang != "de" && inputLang != "en" && inputLang != "hi") {
+		alert("Translation support not added")
+		return
+	}
 
 	const requestOptions = {
 	  method: 'POST',
@@ -103,10 +112,16 @@ async function getTranslation(text) {
 
 	const translateDiv = document.querySelector(".translated-text");
 	try {
-		const response = await fetch(`https://api-translate.systran.net/translation/text/translate?input=${text}&source=auto&key=${API_KEY}&target=${targetLang}`, requestOptions)
+		// const response = await fetch(`https://api-translate.systran.net/translation/text/translate?input=${text}&source=auto&key=${API_KEY}&target=${targetLang}`, requestOptions)
+		//   .then(response => response.text())
+		//   .then(result => JSON.parse(result))
+
+		const response = await fetch(`https://nmt-server-core.azurewebsites.net/predict/${inputLang}&${targetLang}&${text}`)
 		  .then(response => response.text())
 		  .then(result => JSON.parse(result))
 		
+		console.log(response);
+
 		const translatedText = response.outputs[0].output
 
 		// translateDiv.innerHTML = ''
@@ -204,21 +219,43 @@ function recognizeFile(file){
     ? 'js/tesseract-core.asm.js'
     : 'js/tesseract-core.wasm.js';
 
+	console.log(file.src);
 
-	const worker = new Tesseract.TesseractWorker({
-		corePath,
+	const OPTIC_API_KEY = '2po6a3wKgdi6PKwM2Hp23LxA1rkGeM4U8rHTTC88gwBp'
+	var myHeaders = new Headers();
+	myHeaders.append("Content-Type", "application/json");
+	
+	var raw = JSON.stringify({
+	  "apikey": OPTIC_API_KEY,
+	  "url": file.src
 	});
+	
+	var requestOptions = {
+	  method: 'POST',
+	  headers: myHeaders,
+	  body: raw,
+	  redirect: 'follow'
+	};
+	
+	fetch("https://api.optiic.dev/process", requestOptions)
+	  .then(response => response.text())
+	  .then(result => console.log(result))
+	  .catch(error => console.log('error', error));
 
-	worker.recognize(file,
-		$("#langsel").val()
-	)
-		.progress(function(packet){
-			console.info(packet)
-			progressUpdate(packet)
+	// const worker = new Tesseract.TesseractWorker({
+	// 	corePath,
+	// });
 
-		})
-		.then(function(data){
-			console.log(data)
-			progressUpdate({ status: 'done', data: data })
-		})
+	// worker.recognize(file,
+	// 	$("#langsel").val()
+	// )
+	// 	.progress(function(packet){
+	// 		console.info(packet)
+	// 		progressUpdate(packet)
+
+	// 	})
+	// 	.then(function(data){
+	// 		console.log(data)
+	// 		progressUpdate({ status: 'done', data: data })
+	// 	})
 }
