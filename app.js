@@ -108,7 +108,7 @@ async function getTranslation(text) {
 		redirect: 'follow'
 	};
 
-	const translateDiv = document.querySelector(".translated-text");
+	const translateDiv = document.querySelector(".translated-text-block");
 	
 	document.querySelector(".placeholder").style.display = "none"
 	document.querySelector(".blink").style.display = "block"
@@ -221,23 +221,42 @@ function recognizeFile(file){
     ? 'js/tesseract-core.asm.js'
     : 'js/tesseract-core.wasm.js';
 
-	const OPTIC_API_KEY = '2po6a3wKgdi6PKwM2Hp23LxA1rkGeM4U8rHTTC88gwBp'
-	let optiic = new Optiic({
-		apiKey: OPTIC_API_KEY
-	});
-	
-	const src = file.src
+	const OCR_API_KEY = 'K86245119988957'
 
-	let options = {
-		image: src, // local path to the image
-		mode: 'ocr', // ocr
-	  };
+	// let options = {
+	// 	image: src, // local path to the image
+	// 	mode: 'ocr', // ocr
+	//   };
 	  
-	optiic.process(options)
-	  .then(result => {
-		console.log(result);
-		progressUpdate({ status: 'done', data: result.text })
-	})
+	// optiic.process(options)
+	//   .then(result => {
+	// 	console.log(result);
+	// 	progressUpdate({ status: 'done', data: result.text })
+	// })
+
+	const data = {
+		image: file.src, // local path to the image
+		lang: document.querySelector("#langsel").value, // ocr
+	  };
+
+	const requestOptions = {
+		method: 'GET',
+		redirect: 'follow'
+	  };
+
+	  // https://api.ocr.space/parse/imageurl?apikey=K86245119988957&url=http://i.imgur.com/s1JZUnd.gif&language=eng
+	  fetch(`https://api.ocr.space/parse/imageurl?apikey=${OCR_API_KEY}&url=${data.image}&language=${data.lang}`, requestOptions)
+		.then(response => response.text())
+		.then(result => {
+			result = JSON.parse(result)
+			let translation = ""
+			result.ParsedResults.forEach((entry, index) => {
+				translation += entry.ParsedText
+			})
+			console.log(translation);
+			progressUpdate({ status: 'done', data: translation })
+		})
+		.catch(error => alert('error: ', error));
 
 	// progressUpdate({ status: 'done', data: "Well I be damned to traverse the depths of hell, but would you follow me, or just stay back and see the aftermath that goes on which we call the play, setting the cards right and you might come out on top, the harbinger of the good times" })
 }
