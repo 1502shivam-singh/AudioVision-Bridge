@@ -330,6 +330,39 @@ select {
   margin: 0.7rem 0;
 }
 
+.blink {
+  display: none;
+  font-weight: bold;
+}
+
+@keyframes color-change {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.blink-1 {
+  animation-name: color-change;
+  animation-duration: 0.5s; /* Total duration of the animation */
+  animation-iteration-count: infinite;
+}
+.blink-2 {
+  animation-name: color-change;
+  animation-duration: 1s; /* Total duration of the animation */
+  animation-iteration-count: infinite;
+}
+.blink-3 {
+  animation-name: color-change;
+  animation-duration: 1.5s; /* Total duration of the animation */
+  animation-iteration-count: infinite;
+}
+
 @media screen and (min-width: 992px) {
   #startPre{
     /* position: absolute; */

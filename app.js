@@ -109,12 +109,17 @@ async function getTranslation(text) {
 	};
 
 	const translateDiv = document.querySelector(".translated-text");
+	
+	document.querySelector(".placeholder").style.display = "none"
+	document.querySelector(".blink").style.display = "block"
+
 	try {
 		const response = await fetch(`https://nmt-server-core.azurewebsites.net/predict/${inputLang}&${targetLang}&${text}`)
 			.then(response => response.text())
 			.then(result => JSON.parse(result))
 			.catch(error => console.log('error', error)); 
-		
+			
+		document.querySelector(".blink").style.display = "none"		
 
 		console.log(response);
 
