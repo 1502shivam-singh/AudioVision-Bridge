@@ -91,7 +91,6 @@ async function getTranslation(text) {
 	}
 	
 	text = text.replace(/[.?&/\\]/g, '')
-	console.log(text);
 
 	let myHeaders = new Headers();
 	myHeaders.append("Cookie", "__cf_bm=tJ53XYNY2FXHou0aTTigI38aRr9UE28kgqJOrE1I63Q-1675517864-0-Adxq+uoAN2zZOOOFKyixSaG2rqqc4/HzAgatvPesuczyGW9B1vTt+tuGh9UXEiYgejSIW7qumzSTfenvXKwBrgI=");
@@ -105,24 +104,21 @@ async function getTranslation(text) {
 	}
 
 	const requestOptions = {
-	  method: 'POST',
-	  headers: myHeaders,
-	  redirect: 'follow'
+		method: 'GET',
+		redirect: 'follow'
 	};
 
 	const translateDiv = document.querySelector(".translated-text");
 	try {
-		// const response = await fetch(`https://api-translate.systran.net/translation/text/translate?input=${text}&source=auto&key=${API_KEY}&target=${targetLang}`, requestOptions)
-		//   .then(response => response.text())
-		//   .then(result => JSON.parse(result))
-
 		const response = await fetch(`https://nmt-server-core.azurewebsites.net/predict/${inputLang}&${targetLang}&${text}`)
-		  .then(response => response.text())
-		  .then(result => JSON.parse(result))
+			.then(response => response.text())
+			.then(result => JSON.parse(result))
+			.catch(error => console.log('error', error)); 
 		
+
 		console.log(response);
 
-		const translatedText = response.outputs[0].output
+		const translatedText = response.output_data
 
 		// translateDiv.innerHTML = ''
 		typeWriter(translateDiv, translatedText)
@@ -201,7 +197,8 @@ async function progressUpdate(packet){
 			
 			/* pre node created here, child appended to it, a textNode in which we put the detected text */
 			// pre.appendChild(document.createTextNode(packet.data.text.replace(/\n\s*\n/g, '\n')))
-			typeWriter(pre, packet.data.text.replace(/\n\s*\n/g, '\n'))
+			// typeWriter(pre, packet.data.text.replace(/\n\s*\n/g, '\n'))
+			typeWriter(pre, packet.data)
 			
 			line.innerHTML = ''
 			line.appendChild(pre)
@@ -219,43 +216,23 @@ function recognizeFile(file){
     ? 'js/tesseract-core.asm.js'
     : 'js/tesseract-core.wasm.js';
 
-	console.log(file.src);
-
 	const OPTIC_API_KEY = '2po6a3wKgdi6PKwM2Hp23LxA1rkGeM4U8rHTTC88gwBp'
-	var myHeaders = new Headers();
-	myHeaders.append("Content-Type", "application/json");
-	
-	var raw = JSON.stringify({
-	  "apikey": OPTIC_API_KEY,
-	  "url": file.src
+	let optiic = new Optiic({
+		apiKey: OPTIC_API_KEY
 	});
 	
-	var requestOptions = {
-	  method: 'POST',
-	  headers: myHeaders,
-	  body: raw,
-	  redirect: 'follow'
-	};
-	
-	fetch("https://api.optiic.dev/process", requestOptions)
-	  .then(response => response.text())
-	  .then(result => console.log(result))
-	  .catch(error => console.log('error', error));
+	const src = file.src
 
-	// const worker = new Tesseract.TesseractWorker({
-	// 	corePath,
-	// });
+	let options = {
+		image: src, // local path to the image
+		mode: 'ocr', // ocr
+	  };
+	  
+	optiic.process(options)
+	  .then(result => {
+		console.log(result);
+		progressUpdate({ status: 'done', data: result.text })
+	})
 
-	// worker.recognize(file,
-	// 	$("#langsel").val()
-	// )
-	// 	.progress(function(packet){
-	// 		console.info(packet)
-	// 		progressUpdate(packet)
-
-	// 	})
-	// 	.then(function(data){
-	// 		console.log(data)
-	// 		progressUpdate({ status: 'done', data: data })
-	// 	})
+	// progressUpdate({ status: 'done', data: "Well I be damned to traverse the depths of hell, but would you follow me, or just stay back and see the aftermath that goes on which we call the play, setting the cards right and you might come out on top, the harbinger of the good times" })
 }
