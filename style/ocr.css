@@ -41,8 +41,14 @@ body {
   border-radius: 0;
 }
 
+h1 {
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .main-head > h1 {
-  font-size: 7vw;
+  font-size: 5vw;
 }
 
 #log > div {
