@@ -1,0 +1,3 @@
+[submodule "audio-vision-server"]
+	path = audio-vision-server
+	url = https://github.com/1502shivam-singh/audio-vision-server.git
