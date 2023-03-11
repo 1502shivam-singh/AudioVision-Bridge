@@ -1,4 +1,5 @@
 import { LangMap, VoiceMap } from "./lib/map.js"
+import { CompressImage } from "./lib/imageCompress.js"
 
 function typeWriter(animationContainer, string) {
   let index = 0;
@@ -23,6 +24,7 @@ function typeWriter(animationContainer, string) {
   type()
 }
 
+let isUpload = false;
 $( document ).ready(function() {
 	let inputs = document.querySelectorAll( '.inputfile' );
 
@@ -50,14 +52,27 @@ $( document ).ready(function() {
 				label.querySelector( 'span' ).innerHTML = fileName;
 
 				let reader = new FileReader();
-				reader.onload = function () {
-					let dataURL = reader.result;
-					$("#selected-image").attr("src", dataURL);
-					$("#selected-image").addClass("col-12");
-				}
+
+				let imageURL = ""
 				let file = this.files[0];
 				reader.readAsDataURL(file);
-				startRecognize(file);
+				
+				reader.onload = function () {
+					let dataURL = reader.result;
+					imageURL = dataURL
+					
+					console.log("File size", file.size);
+
+					Promise.resolve(CompressImage(imageURL, file.size)).then((value) => {
+						let imgCompressed = value
+						console.log(imgCompressed);
+						$("#selected-image").attr("src", dataURL);
+						$("#selected-image").addClass("col-12");
+						isUpload = true;
+						startRecognize(file, imgCompressed);
+					  });
+				}
+
 			}
 			else{
 				label.innerHTML = labelVal;
@@ -81,7 +96,8 @@ $( document ).ready(function() {
 
 $("#startLink").click(function () {
 	const img = document.getElementById('selected-image');
-	startRecognize(img);
+	console.log(img);
+	startRecognize(img, img.src);
 });
 
 async function getTranslation(text) {
@@ -89,8 +105,10 @@ async function getTranslation(text) {
 		alert("Please extract text from some image before translating")
 		return
 	}
+	console.log("To translate: ", text);
 	
-	text = text.replace(/[.?&/\\]/g, '')
+	text = text.replace(/[.?&/\\{}():\n\t\r]/g, ' ')
+	console.log("To translate after: ", text);
 
 	let myHeaders = new Headers();
 	myHeaders.append("Cookie", "__cf_bm=tJ53XYNY2FXHou0aTTigI38aRr9UE28kgqJOrE1I63Q-1675517864-0-Adxq+uoAN2zZOOOFKyixSaG2rqqc4/HzAgatvPesuczyGW9B1vTt+tuGh9UXEiYgejSIW7qumzSTfenvXKwBrgI=");
@@ -137,12 +155,12 @@ async function getTranslation(text) {
 	}
 }
 
-function startRecognize(img){
+function startRecognize(img, fileSrc){
 	$("#arrow-right").removeClass("fa-arrow-right");
 	$("#arrow-right").addClass("fa-spinner fa-spin");
 	$("#arrow-down").removeClass("fa-arrow-down");
 	$("#arrow-down").addClass("fa-spinner fa-spin");
-	recognizeFile(img);
+	recognizeFile(img, fileSrc);
 }
 
 async function dictate(transcript) {
@@ -215,48 +233,48 @@ async function progressUpdate(packet){
 	}
 }
 
-function recognizeFile(file){
+function recognizeFile(file, fileSrc){
 	$("#log").empty();
   	const corePath = window.navigator.userAgent.indexOf("Edge") > -1
     ? 'js/tesseract-core.asm.js'
     : 'js/tesseract-core.wasm.js';
 
-	const OCR_API_KEY = 'K86245119988957'
-
-	// let options = {
-	// 	image: src, // local path to the image
-	// 	mode: 'ocr', // ocr
-	//   };
-	  
-	// optiic.process(options)
-	//   .then(result => {
-	// 	console.log(result);
-	// 	progressUpdate({ status: 'done', data: result.text })
-	// })
-
 	const data = {
-		image: file.src, // local path to the image
+		image: fileSrc,
 		lang: document.querySelector("#langsel").value, // ocr
-	  };
+	};
+	console.log(file, data.lang);
+
+	const myHeaders = new Headers();
+	myHeaders.append("apikey", "K86245119988957");
+	
+	
+	const formdata = new FormData();
+	formdata.append("language", data.lang);
+	formdata.append("isOverlayRequired", "false");
+	formdata.append("filetype", file.type);
+	isUpload ? formdata.append("base64Image", data.image) : formdata.append("url", data.image)
+	
+	console.log(file, isUpload, formdata, data.image);
 
 	const requestOptions = {
-		method: 'GET',
-		redirect: 'follow'
-	  };
+	  method: 'POST',
+	  headers: myHeaders,
+	  body: formdata,
+	  redirect: 'follow'
+	};
 
-	  // https://api.ocr.space/parse/imageurl?apikey=K86245119988957&url=http://i.imgur.com/s1JZUnd.gif&language=eng
-	  fetch(`https://api.ocr.space/parse/imageurl?apikey=${OCR_API_KEY}&url=${data.image}&language=${data.lang}`, requestOptions)
-		.then(response => response.text())
-		.then(result => {
-			result = JSON.parse(result)
-			let translation = ""
-			result.ParsedResults.forEach((entry, index) => {
-				translation += entry.ParsedText
-			})
-			console.log(translation);
-			progressUpdate({ status: 'done', data: translation })
+	fetch("https://api.ocr.space/parse/image", requestOptions)
+	.then(response => response.text())
+	.then(result => {
+		console.log(result);
+		result = JSON.parse(result)
+		let translation = ""
+		result.ParsedResults.forEach((entry, index) => {
+			translation += entry.ParsedText
 		})
-		.catch(error => alert('error: ', error));
-
-	// progressUpdate({ status: 'done', data: "Well I be damned to traverse the depths of hell, but would you follow me, or just stay back and see the aftermath that goes on which we call the play, setting the cards right and you might come out on top, the harbinger of the good times" })
+		console.log(result, translation);
+		progressUpdate({ status: 'done', data: translation })
+	})
+	.catch(error => alert('error:', error));
 }
